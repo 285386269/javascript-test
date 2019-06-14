@@ -7,14 +7,10 @@ exports.example = () => 'hello world';
 
 exports.stripPrivateProperties = (arrProps, arrObject) => {
     if(arrObject == null || arrObject.length === 0) return arrObject;
-    for(let item of arrObject) {
-        for(let prop of arrProps) {
-            if(item.hasOwnProperty(prop)) {
-                delete item[prop];
-            }
-        }
-    }
-    return arrObject;
+    return arrObject.map(item =>{
+        Object.keys(item).forEach(subItem => arrProps.includes(subItem) && delete item[subItem]);
+        return item;
+    });
 };
 exports.excludeByProperty = (flag, arrObject) => {
     if(arrObject == null || arrObject.length === 0) return arrObject;
@@ -32,10 +28,11 @@ exports.sumDeep = (arrObject) => {
 };
 exports.applyStatusColor = (objColor, arrObject) => {
     return arrObject.filter(item => {
-        (objColor.red.includes(item.status) && (item.color = 'red')) || 
-        (objColor.green.includes(item.status) && (item.color = 'green'));
+        Object.keys(objColor).forEach(prop => {
+            objColor[prop].includes(item.status) && (item.color = prop);
+        });
         return item.hasOwnProperty('color');
-    })
+    });
 };
 exports.createGreeting = (greet, greeting) => {
     return function(name) {
@@ -52,20 +49,15 @@ exports.setDefaults = (defaultObj) => {
         return obj;
     }
 };
-exports.fetchUserByNameAndUsersCompany = (name, services) => {
-    return services.fetchUsers().then(users => {
-        return {
-            company: {},
-            status: 0,
-            user: users.find(user => user.name == name),
-        }
-    }).then(data => {
-        return Promise.all([services.fetchCompanyById(data.user.companyId),
-        data, 
-        services.fetchStatus()]).then(arrResults => {
-            arrResults[1].company = arrResults[0];
-            arrResults[1].status = arrResults[2];
-            return arrResults[1];
-        });
-    })
+exports.fetchUserByNameAndUsersCompany = async (name, services) => {
+    let result = {
+        company: {},
+        status: 0,
+        user: null,
+    }
+    let users = await services.fetchUsers();
+    result.user = users.find(user => user.name == name);
+    result.company = await services.fetchCompanyById(result.user.companyId);
+    result.status = await services.fetchStatus();
+    return result;
 };
