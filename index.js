@@ -14,9 +14,7 @@ exports.stripPrivateProperties = (arrProps, arrObject) => {
 };
 exports.excludeByProperty = (flag, arrObject) => {
     if(arrObject == null || arrObject.length === 0) return arrObject;
-    return arrObject.filter(item => {
-        return !item.hasOwnProperty('deleted');
-    })
+    return arrObject.filter(item => !item.hasOwnProperty('deleted'));
 };
 exports.sumDeep = (arrObject) => {
     if(arrObject == null || arrObject.length === 0) return arrObject;
@@ -42,9 +40,7 @@ exports.createGreeting = (greet, greeting) => {
 exports.setDefaults = (defaultObj) => {
     return function(obj) {
         for(let prop in defaultObj) {
-            if(!obj.hasOwnProperty(prop)) {
-                obj[prop] = defaultObj[prop];
-            }
+            !obj.hasOwnProperty(prop) && (obj[prop] = defaultObj[prop]);
         }
         return obj;
     }
@@ -57,7 +53,10 @@ exports.fetchUserByNameAndUsersCompany = async (name, services) => {
     }
     let users = await services.fetchUsers();
     result.user = users.find(user => user.name == name);
-    result.company = await services.fetchCompanyById(result.user.companyId);
-    result.status = await services.fetchStatus();
-    return result;
+    return Promise.all([services.fetchCompanyById(result.user.companyId), 
+        services.fetchStatus()]).then(arrResult => {
+        result.company = arrResult[0];
+        result.status = arrResult[1];
+        return result;
+    })
 };
